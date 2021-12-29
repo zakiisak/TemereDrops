@@ -1,0 +1,14 @@
+name: TemereDrops
+version: '${project.version}'
+main: com.icurety.temeredrops.TemereDrops
+api-version: 1.18
+authors: [ Zakiisak ]
+description: Randomizes all drops of blocks/mobs/explosions based on the seed of the world
+website: icurety.com
+commands:
+  temereScheme:
+      description: Prints the assigned drops spread across blocks and mobs
+      usage: /<command> [blocks | mobs | explosion | <drop> | all]
+  temereReassign:
+    description: Reassigns new drops for all blocks and mobs
+    usage: /<command>
