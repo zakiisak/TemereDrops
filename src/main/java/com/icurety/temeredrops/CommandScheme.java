@@ -26,15 +26,22 @@ public class CommandScheme implements CommandExecutor {
                         ChatColor.YELLOW + "---------- Mob Drops: ----------", DropRegistry.getMobDropScheme(),
                         ChatColor.YELLOW + "---------- Mob Explosion Drops: ----------", DropRegistry.getMobExplosionDropScheme());
             }
+            else if(argument.toLowerCase().equals("unassigned")) {
+                sender.sendMessage(ChatColor.YELLOW + "-------- Unassigned Drops --------\n" + DropRegistry.getUnassignedScheme());
+            }
             else {
                 //try for specific material
 
                 try {
                     String dropper = DropRegistry.findDropperFromDrop(argument);
-                    sender.sendMessage(argument + " gets dropped by " + ChatColor.YELLOW +  dropper);
+                    if(dropper == null)
+                    {
+                        sender.sendMessage("That item hasn't been assigned to anything");
+                    }
+                    else sender.sendMessage(argument + " gets dropped by " + ChatColor.YELLOW +  dropper);
                 }
                 catch(MaterialNotFoundException e) {
-                    sender.sendMessage("That item hasn't been assigned to anything");
+                    sender.sendMessage(ChatColor.RED + "That item doesn't exist!");
                 }
             }
             return true;

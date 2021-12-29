@@ -47,8 +47,8 @@ public final class TemereDrops extends JavaPlugin {
         DropRegistry.load(seed);
 
         getServer().getPluginManager().registerEvents(new DropEventListener(), this);
-        this.getCommand("temerescheme").setExecutor(new CommandScheme());
-        this.getCommand("temereReassign").setExecutor(new CommandNewSeed());
+        this.getCommand("dropscheme").setExecutor(new CommandScheme());
+        this.getCommand("reassigndrops").setExecutor(new CommandNewSeed());
     }
 
     @Override

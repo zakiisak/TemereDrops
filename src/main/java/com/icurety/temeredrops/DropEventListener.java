@@ -1,11 +1,8 @@
 package com.icurety.temeredrops;
 
-import org.bukkit.Bukkit;
-import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.EntityType;
-import org.bukkit.entity.Item;
+import org.bukkit.*;
+import org.bukkit.enchantments.Enchantment;
+import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
@@ -14,13 +11,19 @@ import org.bukkit.event.block.BlockExplodeEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.EntityDropItemEvent;
+import org.bukkit.event.player.PlayerFishEvent;
+import org.bukkit.event.player.PlayerShearEntityEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.material.Crops;
+import org.bukkit.util.Vector;
 import sun.text.resources.ext.FormatData_ga;
 
 import java.util.*;
 
 public class DropEventListener implements Listener {
     private Random rng = new Random();
+
+    private List<Material> allItemsRegistry = DropRegistry.getAllItems();
 
     //Map of coordinate/material type so that we know that the type of the destroyed block was, so we know what to drop
     private Map<String, Material> breakedBlocksCoordinateCache = new HashMap<String, Material>();
@@ -31,9 +34,17 @@ public class DropEventListener implements Listener {
 
     @EventHandler
     public void onBlockBreak(BlockBreakEvent event) {
-        Location location = event.getBlock().getLocation();
-        String key = this.getBlockLocationKey(location);
-        breakedBlocksCoordinateCache.put(key, event.getBlock().getType());
+        //If the user is using a silk touch pickaxe, the block should drop the actual block
+        if(event.getPlayer().getInventory().getItemInMainHand() != null && event.getPlayer().getInventory().getItemInMainHand().containsEnchantment(Enchantment.SILK_TOUCH)) {
+            event.getBlock().getWorld().dropItem(event.getBlock().getLocation().add(0.5, 0.5, 0.5), new ItemStack(event.getBlock().getType()));
+            event.setDropItems(false);
+        }
+        else {
+            Location location = event.getBlock().getLocation();
+            String key = this.getBlockLocationKey(location);
+            breakedBlocksCoordinateCache.put(key, event.getBlock().getType());
+
+        }
     }
 
     @EventHandler
@@ -41,8 +52,6 @@ public class DropEventListener implements Listener {
         if(event.getItems().size() > 0)
         {
             Item dropEntity = event.getItems().get(0);
-            int originalAmount = dropEntity.getItemStack().getAmount();
-
             //will remove any overheading items in the list.
             //We only want a single drop entity
             for(int i = event.getItems().size() - 1; i > 0; i--) {
@@ -60,13 +69,12 @@ public class DropEventListener implements Listener {
     @EventHandler
     public void onEntityDeath(EntityDeathEvent event) {
         Material assignedDrop = DropRegistry.getDropMaterialForEntity(event.getEntityType());
-        if(assignedDrop != null) {
+        if (assignedDrop != null) {
             int amount = 1;
             if (event.getDrops().size() > 0) {
                 amount = event.getDrops().get(0).getAmount();
             }
             event.getDrops().clear();
-
 
 
             event.getDrops().add(new ItemStack(assignedDrop, amount));
@@ -82,4 +90,49 @@ public class DropEventListener implements Listener {
             }
         }
     }
+
+    @EventHandler
+    public void onEntityDropItem(EntityDropItemEvent event) {
+        if(event.getEntity() instanceof Sheep) {
+            Sheep sheep = (Sheep) event.getEntity();
+            DyeColor color = sheep.getColor();
+            Material assignedDrop = DropRegistry.getDropMaterialForSheep(color);
+            if(assignedDrop != null) {
+                event.getItemDrop().getItemStack().setType(assignedDrop);
+            }
+        }
+        //Chickens drop completely random items instead of eggs
+        else if(event.getEntity() instanceof Chicken && event.getItemDrop().getItemStack().getType().equals(Material.EGG))
+        {
+            event.getItemDrop().getItemStack().setType(allItemsRegistry.get(rng.nextInt(allItemsRegistry.size())));
+        }
+    }
+
+    private void fireTNTTowardsPlayer(Location location, Player player) {
+        TNTPrimed tnt =  (TNTPrimed) player.getWorld().spawnEntity(location, EntityType.PRIMED_TNT);
+        tnt.setFuseTicks(10 + rng.nextInt(30));
+        tnt.setGravity(true);
+        tnt.setVelocity(player.getLocation().toVector().add(new Vector(0, 3, 0)).subtract(tnt.getLocation().toVector()).divide(new Vector(10, 10, 10)));
+    }
+
+    @EventHandler
+    public void onPlayerFish(PlayerFishEvent event) {
+        if(event.getCaught() != null) {
+
+            //20% change tnt entity gets thrown at player
+            if(rng.nextInt(5) == 2) {
+                fireTNTTowardsPlayer(event.getHook().getLocation().add(0, 2, 0), event.getPlayer());
+            }
+            //otherwise loot unassigned items
+            else if(event.getCaught() instanceof Item) {
+                Item item = (Item) event.getCaught();
+                if(DropRegistry.getUnassignedItems().size() > 0 )
+                {
+                    Material randomItem = DropRegistry.getUnassignedItems().get(rng.nextInt(DropRegistry.getUnassignedItems().size()));
+                    item.getItemStack().setType(randomItem);
+                }
+            }
+        }
+    }
+
 }

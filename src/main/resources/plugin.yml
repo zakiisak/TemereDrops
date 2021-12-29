@@ -6,9 +6,9 @@ authors: [ Zakiisak ]
 description: Randomizes all drops of blocks/mobs/explosions based on the seed of the world
 website: icurety.com
 commands:
-  temereScheme:
+  dropscheme:
       description: Prints the assigned drops spread across blocks and mobs
-      usage: /<command> [blocks | mobs | explosion | <drop> | all]
-  temereReassign:
+      usage: /<command> [all | blocks | mobs | explosion | unassigned | <drop>]
+  reassigndrops:
     description: Reassigns new drops for all blocks and mobs
     usage: /<command>
