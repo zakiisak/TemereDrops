@@ -1,5 +1,6 @@
 package com.icurety.temeredrops;
 
+import jdk.nashorn.internal.ir.Block;
 import org.bukkit.*;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.*;
@@ -35,11 +36,17 @@ public class DropEventListener implements Listener {
     @EventHandler
     public void onBlockBreak(BlockBreakEvent event) {
         //If the user is using a silk touch pickaxe, the block should drop the actual block
-        if(event.getPlayer().getInventory().getItemInMainHand() != null && event.getPlayer().getInventory().getItemInMainHand().containsEnchantment(Enchantment.SILK_TOUCH)) {
-            event.getBlock().getWorld().dropItem(event.getBlock().getLocation().add(0.5, 0.5, 0.5), new ItemStack(event.getBlock().getType()));
+        if(event.getPlayer().getGameMode() != GameMode.CREATIVE && event.getPlayer().getInventory().getItemInMainHand() != null && event.getPlayer().getInventory().getItemInMainHand().containsEnchantment(Enchantment.SILK_TOUCH)) {
+            event.getBlock().getWorld().dropItem(event.getBlock().getLocation(), new ItemStack(event.getBlock().getType()));
             event.setDropItems(false);
         }
         else {
+            //If the block doesn't have any drops, we will just spawn the drop item through here
+            if(event.getPlayer().getGameMode() != GameMode.CREATIVE && event.getBlock().getDrops().size() == 0) {
+                Material assignedDrop = DropRegistry.getDropMaterialForBlock(event.getBlock().getType());
+                if(assignedDrop != null)
+                    event.getBlock().getWorld().dropItem(event.getBlock().getLocation().add(0.5, 0.5, 0.5), new ItemStack(assignedDrop));
+            }
             Location location = event.getBlock().getLocation();
             String key = this.getBlockLocationKey(location);
             breakedBlocksCoordinateCache.put(key, event.getBlock().getType());
